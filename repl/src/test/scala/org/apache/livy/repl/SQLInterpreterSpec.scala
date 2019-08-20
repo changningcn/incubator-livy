@@ -54,16 +54,14 @@ class SQLInterpreterSpec extends BaseInterpreterSpec {
         |SELECT * FROM people
       """.stripMargin)
 
-    // In Spark 1.6, 2.0, 2.2 the "nullable" field of column "age" is false. In spark 2.1, this
-    // field is true.
-    val expectedResult = (nullable: Boolean) => {
+    resp1 should equal(
       Interpreter.ExecuteSuccess(
         APPLICATION_JSON -> (("schema" ->
           (("type" -> "struct") ~
             ("fields" -> List(
               ("name" -> "name") ~ ("type" -> "string") ~ ("nullable" -> true) ~
                 ("metadata" -> List()),
-              ("name" -> "age") ~ ("type" -> "integer") ~ ("nullable" -> nullable) ~
+              ("name" -> "age") ~ ("type" -> "integer") ~ ("nullable" -> false) ~
                 ("metadata" -> List())
             )))) ~
           ("data" -> List(
@@ -71,13 +69,7 @@ class SQLInterpreterSpec extends BaseInterpreterSpec {
             List[JValue]("Michael", 21)
           )))
       )
-    }
-
-    val result = Try { resp1 should equal(expectedResult(false))}
-      .orElse(Try { resp1 should equal(expectedResult(true)) })
-    if (result.isFailure) {
-      fail(s"$resp1 doesn't equal to expected result")
-    }
+    )
 
     // Test empty result
      val resp2 = interpreter.execute(
@@ -93,6 +85,36 @@ class SQLInterpreterSpec extends BaseInterpreterSpec {
           )))) ~
         ("data" -> JArray(List())))
     ))
+  }
+
+  it should "handle java BigDecimal" in withInterpreter { interpreter =>
+    val rdd = sparkEntries.sc().parallelize(Seq(
+      ("1", new java.math.BigDecimal(1.0)),
+      ("2", new java.math.BigDecimal(2.0))))
+    val df = sparkEntries.sqlctx().createDataFrame(rdd).selectExpr("_1 as col1", "_2 as col2")
+    df.registerTempTable("test")
+
+    val resp1 = interpreter.execute(
+      """
+        |SELECT * FROM test
+      """.stripMargin)
+
+    resp1 should equal(
+      Interpreter.ExecuteSuccess(
+        APPLICATION_JSON -> (("schema" ->
+          (("type" -> "struct") ~
+            ("fields" -> List(
+              ("name" -> "col1") ~ ("type" -> "string") ~ ("nullable" -> true) ~
+                ("metadata" -> List()),
+              ("name" -> "col2") ~ ("type" -> "decimal(38,18)") ~ ("nullable" -> true) ~
+                ("metadata" -> List())
+            )))) ~
+          ("data" -> List(
+            List[JValue]("1", 1.0d),
+            List[JValue]("2", 2.0d)
+          )))
+      )
+    )
   }
 
   it should "throw exception for illegal query" in withInterpreter { interpreter =>

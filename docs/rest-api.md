@@ -644,6 +644,10 @@ A session represents an interactive shell.
     <td>Session has exited</td>
   </tr>
   <tr>
+    <td>killed</td>
+    <td>Session has been killed</td>
+  </tr>
+  <tr>
     <td>success</td>
     <td>Session is successfully stopped</td>
   </tr>
@@ -806,3 +810,10 @@ A statement represents the result of an execution statement.
     <td>string</td>
   </tr>
 </table>
+
+### Proxy User - `doAs` support
+If superuser support is configured, Livy supports the `doAs` query parameter
+to specify the user to impersonate. The `doAs` query parameter can be used
+on any supported REST endpoint described above to perform the action as the
+specified user. If both `doAs` and `proxyUser` are specified during session
+or batch creation, the `doAs` parameter takes precedence.

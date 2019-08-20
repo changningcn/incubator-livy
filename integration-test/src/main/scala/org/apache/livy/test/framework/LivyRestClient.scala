@@ -112,6 +112,7 @@ class LivyRestClient(val httpClient: AsyncHttpClient, val livyEndpoint: String) 
 
   class BatchSession(id: Int) extends Session(id, BATCH_TYPE) {
     def verifySessionDead(): Unit = verifySessionState(SessionState.Dead())
+    def verifySessionKilled(): Unit = verifySessionState(SessionState.Killed())
     def verifySessionRunning(): Unit = verifySessionState(SessionState.Running)
     def verifySessionSuccess(): Unit = verifySessionState(SessionState.Success())
   }
@@ -241,15 +242,21 @@ class LivyRestClient(val httpClient: AsyncHttpClient, val livyEndpoint: String) 
     def verifySessionIdle(): Unit = {
       verifySessionState(SessionState.Idle)
     }
+
+    def verifySessionKilled(): Unit = {
+      verifySessionState(SessionState.Killed())
+    }
   }
 
   def startBatch(
+      name: Option[String],
       file: String,
       className: Option[String],
       args: List[String],
       sparkConf: Map[String, String]): BatchSession = {
     val r = new CreateBatchRequest()
     r.file = file
+    r.name = name
     r.className = className
     r.args = args
     r.conf = Map("spark.yarn.maxAppAttempts" -> "1") ++ sparkConf
@@ -259,12 +266,14 @@ class LivyRestClient(val httpClient: AsyncHttpClient, val livyEndpoint: String) 
   }
 
   def startSession(
+      name: Option[String],
       kind: Kind,
       sparkConf: Map[String, String],
       heartbeatTimeoutInSecond: Int): InteractiveSession = {
     val r = new CreateInteractiveRequest()
     r.kind = kind
     r.conf = sparkConf
+    r.name = name
     r.heartbeatTimeoutInSecond = heartbeatTimeoutInSecond
 
     val id = start(INTERACTIVE_TYPE, mapper.writeValueAsString(r))

@@ -52,12 +52,13 @@ class InteractiveSessionServlet(
 
   override protected def createSession(req: HttpServletRequest): InteractiveSession = {
     val createRequest = bodyAs[CreateInteractiveRequest](req)
-    val proxyUser = checkImpersonation(createRequest.proxyUser, req)
     InteractiveSession.create(
       sessionManager.nextId(),
+      createRequest.name,
       remoteUser(req),
-      proxyUser,
+      proxyUser(req, createRequest.proxyUser),
       livyConf,
+      accessManager,
       createRequest,
       sessionStore)
   }
@@ -66,11 +67,11 @@ class InteractiveSessionServlet(
       session: InteractiveSession,
       req: HttpServletRequest): Any = {
     val logs =
-      if (hasViewAccess(session.owner, req)) {
+      if (accessManager.hasViewAccess(session.owner, effectiveUser(req))) {
         Option(session.logLines())
           .map { lines =>
             val size = 10
-            var from = math.max(0, lines.length - size)
+            val from = math.max(0, lines.length - size)
             val until = from + size
 
             lines.view(from, until)
@@ -80,8 +81,9 @@ class InteractiveSessionServlet(
         Nil
       }
 
-    new SessionInfo(session.id, session.appId.orNull, session.owner, session.proxyUser.orNull,
-      session.state.toString, session.kind.toString, session.appInfo.asJavaMap, logs.asJava)
+    new SessionInfo(session.id, session.name.orNull, session.appId.orNull, session.owner,
+      session.proxyUser.orNull, session.state.toString, session.kind.toString,
+      session.appInfo.asJavaMap, logs.asJava)
   }
 
   post("/:id/stop") {

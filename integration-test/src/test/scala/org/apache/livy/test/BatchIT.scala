@@ -105,7 +105,7 @@ class BatchIT extends BaseIntegrationTestSuite with BeforeAndAfterAll {
 
       // Kill the YARN app and check batch state should be KILLED.
       cluster.yarnClient.killApplication(appId)
-      s.verifySessionDead()
+      s.verifySessionKilled()
 
       cluster.yarnClient.getApplicationReport(appId).getFinalApplicationStatus shouldBe
         FinalApplicationStatus.KILLED
@@ -159,14 +159,14 @@ class BatchIT extends BaseIntegrationTestSuite with BeforeAndAfterAll {
   private def withScript[R]
     (scriptPath: String, args: List[String], sparkConf: Map[String, String] = Map.empty)
     (f: (LivyRestClient#BatchSession) => R): R = {
-    val s = livyClient.startBatch(scriptPath, None, args, sparkConf)
+    val s = livyClient.startBatch(None, scriptPath, None, args, sparkConf)
     withSession(s)(f)
   }
 
   private def withTestLib[R]
     (testClass: Class[_], args: List[String], sparkConf: Map[String, String] = Map.empty)
     (f: (LivyRestClient#BatchSession) => R): R = {
-    val s = livyClient.startBatch(testLibPath, Some(testClass.getName()), args, sparkConf)
+    val s = livyClient.startBatch(None, testLibPath, Some(testClass.getName()), args, sparkConf)
     withSession(s)(f)
   }
 }

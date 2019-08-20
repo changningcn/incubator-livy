@@ -20,16 +20,16 @@
   <parent>
     <groupId>org.apache.livy</groupId>
     <artifactId>livy-main</artifactId>
-    <version>0.5.0-incubating</version>
+    <version>0.7.0-incubating-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
   <artifactId>livy-assembly</artifactId>
-  <version>0.5.0-incubating</version>
+  <version>0.7.0-incubating-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <properties>
-    <assembly.name>livy-${project.version}-bin</assembly.name>
+    <assembly.name>apache-livy-${project.version}-bin</assembly.name>
     <assembly.format>zip</assembly.format>
     <skipDeploy>true</skipDeploy>
   </properties>
@@ -38,12 +38,6 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>livy-rsc</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>livy-repl_2.10</artifactId>
       <version>${project.version}</version>
     </dependency>
 
@@ -77,9 +71,6 @@
               <descriptors>
                 <descriptor>assembly.xml</descriptor>
               </descriptors>
-              <formats>
-                <format>${assembly.format}</format>
-              </formats>
             </configuration>
           </execution>
         </executions>
@@ -93,6 +84,22 @@
       <properties>
         <assembly.format>tar.gz</assembly.format>
       </properties>
+    </profile>
+
+    <profile>
+      <id>thriftserver</id>
+      <dependencies>
+        <dependency>
+          <groupId>${project.groupId}</groupId>
+          <artifactId>livy-thriftserver</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>${project.groupId}</groupId>
+          <artifactId>livy-thriftserver-session</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+      </dependencies>
     </profile>
   </profiles>
 
